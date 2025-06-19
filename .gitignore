@@ -17,6 +17,9 @@ yarn-error.log*
 .vscode/
 .idea/
 vendor/
+match/
+node_modules/
 # macOS / Windows system files
 .DS_Store
 Thumbs.db
+
