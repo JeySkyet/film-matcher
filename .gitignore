@@ -1,0 +1,22 @@
+# Env vars
+.env
+
+# React + Vite
+frontend/node_modules/
+frontend/dist/
+
+# Puppeteer временные данные
+watchlist.csv
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE configs
+.vscode/
+.idea/
+vendor/
+# macOS / Windows system files
+.DS_Store
+Thumbs.db

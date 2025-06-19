@@ -1,0 +1,8 @@
+{
+    "name": "gk/learning-jenya",
+    "require": {
+        "simplehtmldom/simplehtmldom": "dev-master"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
