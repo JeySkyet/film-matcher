@@ -1,130 +1,108 @@
 const fs = require('fs');
 const https = require('https');
+const path = require('path');
 const WebSocket = require('ws');
+const { parse } = require('csv-parse/sync');
+const { getOrCreateRoom, registerUser, recordSwipe, markDone, removeUser, getRoom } = require('./rooms');
 
-// SSL-сертификаты (замени путь, если другой)
 const server = https.createServer({
     cert: fs.readFileSync('/var/www/httpd-cert/www-root/learning-jenya.gk-dev.ru_le1.crtca'),
-    key: fs.readFileSync('/var/www/httpd-cert/www-root/learning-jenya.gk-dev.ru_le1.key')
+    key: fs.readFileSync('/var/www/httpd-cert/www-root/learning-jenya.gk-dev.ru_le1.key'),
 });
 
-// WebSocket-сервер поверх HTTPS
 const wss = new WebSocket.Server({ server });
 
-server.listen(3010, () => {
-    console.log('WebSocket server running at wss://learning-jenya.gk-dev.ru:3010');
-});
-
-const path = require('path');
-const parse = require('csv-parse/sync').parse;
-
-function loadWatchlist() {
-    const csvData = fs.readFileSync(path.join(__dirname, '../watchlist.csv'), 'utf8');
-    const records = parse(csvData, {
-        columns: true,
-        skip_empty_lines: true
-    });
-    return records.map((record, index) => ({
-        id: `film${index + 1}`,
-        title: record.Title,
-        poster: record.Image
+function loadFilms() {
+    const csv = fs.readFileSync(path.join(__dirname, '../watchlist.csv'), 'utf8');
+    return parse(csv, { columns: true, skip_empty_lines: true }).map((r, i) => ({
+        id: `f${i}`,
+        title: r.Title,
+        poster: r.Image,
     }));
 }
 
-const FILMS = loadWatchlist();
-console.log(`✅ Loaded ${FILMS.length} films from watchlist.csv`);
+const ALL_FILMS = loadFilms();
+console.log(`Loaded ${ALL_FILMS.length} films from watchlist.csv`);
 
-
-const rooms = {};
-
-function shuffle(array) {
-    let currentIndex = array.length, randomIndex;
-    while (currentIndex !== 0) {
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex--;
-        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
     }
-    return array;
+    return a;
+}
+
+function send(ws, data) {
+    if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(data));
+}
+
+function broadcast(roomId, data) {
+    const room = getRoom(roomId);
+    if (!room) return;
+    for (const { ws } of Object.values(room.users)) send(ws, data);
 }
 
 wss.on('connection', (ws) => {
-    let currentRoomId = null;
-    let currentUserId = null;
+    let roomId = null;
+    let userId = null;
+    let leaveTimer = null;
 
-    ws.on('message', (msg) => {
-        try {
-            const data = JSON.parse(msg);
+    ws.on('message', (raw) => {
+        let data;
+        try { data = JSON.parse(raw); } catch { return send(ws, { error: 'invalid_json' }); }
 
-            if (data.action === 'join') {
-                const { roomId, userId } = data;
-                currentRoomId = roomId;
-                currentUserId = userId;
+        if (data.action === 'join') {
+            if (!data.roomId || !data.userId) return send(ws, { error: 'missing_fields' });
+            roomId = String(data.roomId).trim();
+            userId = String(data.userId).trim();
 
-                if (!rooms[roomId]) {
-                    rooms[roomId] = { users: {}, films: shuffle([...FILMS]) };
-                    console.log(`Created room ${roomId}`);
-                }
+            if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = null; }
 
-                rooms[roomId].users[userId] = { ws, swipes: {} };
+            const room = getOrCreateRoom(roomId, shuffle(ALL_FILMS));
+            const type = registerUser(roomId, userId, ws);
+            const usersCount = Object.keys(room.users).length;
 
-                const usersCount = Object.keys(rooms[roomId].users).length;
-                const joinedMsg = JSON.stringify({
-                    action: 'joined',
-                    films: rooms[roomId].films,
-                    usersCount
-                });
+            const msg = { action: 'joined', films: room.films, usersCount };
+            // On reconnect only the rejoining client gets the update
+            if (type === 'reconnect') send(ws, msg);
+            else broadcast(roomId, msg);
 
-                Object.values(rooms[roomId].users).forEach(u => {
-                    u.ws.send(joinedMsg);
-                });
+            console.log(`[${type}] ${userId} → room ${roomId} (${usersCount} users)`);
 
-
-                console.log(`User ${userId} joined room ${roomId}`);
-
-            } else if (data.action === 'swipe') {
-                const { filmId, direction } = data;
-                if (!currentRoomId || !currentUserId) return;
-
-                const room = rooms[currentRoomId];
-                if (!room) return;
-                const user = room.users[currentUserId];
-                if (!user) return;
-
-                user.swipes[filmId] = direction;
-
-                if (direction === 'right') {
-                    for (const [otherUserId, otherUser] of Object.entries(room.users)) {
-                        if (otherUserId === currentUserId) continue;
-                        if (otherUser.swipes[filmId] === 'right') {
-                            const filmData = room.films.find(f => f.id === filmId);
-                            const matchMsg = JSON.stringify({ action: 'match', film: filmData });
-
-                            user.ws.send(matchMsg);
-                            otherUser.ws.send(matchMsg);
-
-                            console.log(`Match found in room ${currentRoomId} on film ${filmId}`);
-                            return;
-                        }
-                    }
-                }
-
-                ws.send(JSON.stringify({ action: 'swipe_ack', filmId, direction }));
+        } else if (data.action === 'swipe') {
+            if (!roomId || !userId) return;
+            const matched = recordSwipe(roomId, userId, data.filmId, data.direction);
+            if (matched) {
+                broadcast(roomId, { action: 'match', film: matched });
+                console.log(`[match] room ${roomId}: "${matched.title}"`);
             } else {
-                ws.send(JSON.stringify({ error: 'Unknown action' }));
+                send(ws, { action: 'swipe_ack', filmId: data.filmId });
             }
-        } catch (e) {
-            ws.send(JSON.stringify({ error: 'Invalid message format' }));
+
+        } else if (data.action === 'done') {
+            if (!roomId || !userId) return;
+            const matches = markDone(roomId, userId);
+            if (matches !== null) {
+                broadcast(roomId, { action: 'game_over', matches });
+                console.log(`[game_over] room ${roomId}: ${matches.length} matches`);
+            }
         }
     });
 
     ws.on('close', () => {
-        if (currentRoomId && currentUserId && rooms[currentRoomId]) {
-            delete rooms[currentRoomId].users[currentUserId];
-            if (Object.keys(rooms[currentRoomId].users).length === 0) {
-                delete rooms[currentRoomId];
-                console.log(`Room ${currentRoomId} deleted`);
+        if (!roomId || !userId) return;
+        // Wait 30s before cleanup to allow reconnect
+        leaveTimer = setTimeout(() => {
+            const room = getRoom(roomId);
+            if (room?.users[userId]?.ws === ws) {
+                const deleted = removeUser(roomId, userId);
+                console.log(deleted ? `[room_deleted] ${roomId}` : `[user_left] ${userId} from ${roomId}`);
             }
-        }
-        console.log(`Connection closed for user ${currentUserId} in room ${currentRoomId}`);
+        }, 30_000);
     });
+});
+
+server.listen(3010, () => {
+    console.log('WSS server: wss://learning-jenya.gk-dev.ru:3010');
 });

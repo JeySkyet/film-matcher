@@ -1,45 +1,38 @@
-let socket;
+let socket = null;
+let onMessage = null;
+let params = null;
+let reconnectTimer = null;
 
-export function connect(userId, roomId, onMessage) {
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const host = window.location.hostname;
-    const port = 3010;
+export function connect(userId, roomId, handler) {
+    params = { userId, roomId };
+    onMessage = handler;
+    _open();
+}
 
-    socket = new WebSocket(`${protocol}://${host}:${port}`);
+function _open() {
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+
+    const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    socket = new WebSocket(`${proto}://${window.location.hostname}:3010`);
 
     socket.onopen = () => {
-        console.log('WebSocket connected');
-        socket.send(JSON.stringify({
-            action: 'join',
-            userId,
-            roomId
-        }));
+        socket.send(JSON.stringify({ action: 'join', ...params }));
     };
 
-    socket.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        console.log('Message from server:', msg);
-        onMessage(msg);
-    };
-
-    socket.onerror = (err) => {
-        console.error('WebSocket error:', err);
+    socket.onmessage = (e) => {
+        try { onMessage?.(JSON.parse(e.data)); } catch {}
     };
 
     socket.onclose = () => {
-        console.warn('WebSocket closed');
+        reconnectTimer = setTimeout(_open, 3000);
     };
+
+    socket.onerror = () => {};
 }
 
-export function sendSwipe(filmId, direction) {
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-        console.error('WebSocket not ready');
-        return;
-    }
-
-    socket.send(JSON.stringify({
-        action: 'swipe',
-        filmId,
-        direction
-    }));
+function _send(data) {
+    if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(data));
 }
+
+export const sendSwipe = (filmId, direction) => _send({ action: 'swipe', filmId, direction });
+export const sendDone = () => _send({ action: 'done' });
