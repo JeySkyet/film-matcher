@@ -10,12 +10,12 @@ const path = require('path');
     const browser = await puppeteer.launch({
         headless: 'new',
         executablePath: '/usr/bin/chromium-browser',
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
     });
 
     const page = await browser.newPage();
 
-    await page.goto('https://letterboxd.com/sign-in/', { waitUntil: 'networkidle2' });
+    await page.goto('https://letterboxd.com/sign-in/', { waitUntil: 'networkidle2', timeout: 60000 });
 
     await page.type('input[name="username"]', username);
     await page.type('input[name="password"]', password);
@@ -25,7 +25,7 @@ const path = require('path');
         page.waitForNavigation({ waitUntil: 'networkidle2' }),
     ]);
 
-    await page.goto('https://letterboxd.com/jellinholl/watchlist/', { waitUntil: 'networkidle2' });
+    await page.goto('https://letterboxd.com/jellinholl/watchlist/', { waitUntil: 'networkidle2', timeout: 60000 });
 
     await page.waitForSelector('.film-poster');
 
