@@ -1,14 +1,11 @@
-const fs = require('fs');
-const https = require('https');
+const http = require('http');
 const path = require('path');
 const WebSocket = require('ws');
 const { parse } = require('csv-parse/sync');
+const fs = require('fs');
 const { getOrCreateRoom, registerUser, recordSwipe, markDone, removeUser, getRoom } = require('./rooms');
 
-const server = https.createServer({
-    cert: fs.readFileSync('/var/www/httpd-cert/www-root/learning-jenya.gk-dev.ru_le1.crtca'),
-    key: fs.readFileSync('/var/www/httpd-cert/www-root/learning-jenya.gk-dev.ru_le1.key'),
-});
+const server = http.createServer();
 
 const wss = new WebSocket.Server({ server });
 
@@ -104,5 +101,5 @@ wss.on('connection', (ws) => {
 });
 
 server.listen(3010, () => {
-    console.log('WSS server: wss://learning-jenya.gk-dev.ru:3010');
+    console.log('WS server: ws://0.0.0.0:3010');
 });
