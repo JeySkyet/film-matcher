@@ -35,7 +35,8 @@ function buildPosterUrl(uid, slug, cacheBustingKey) {
         const url = `${BASE_URL}${pageNum}/`;
         console.log(`Страница ${pageNum}: ${url}`);
 
-        await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        await new Promise(r => setTimeout(r, 2000));
 
         const exists = await page.$('.film-poster').catch(() => null);
         if (!exists) { console.log('Фильмы закончились.'); break; }
