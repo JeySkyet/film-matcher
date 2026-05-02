@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "update-watchlist": "node watchlist.js && scp watchlist.csv root@157.22.198.66:/var/www/jellinholl/film-matcher/watchlist.csv && ssh root@157.22.198.66 'pm2 restart film-matcher'"
   },
   "keywords": [],
   "author": "",
