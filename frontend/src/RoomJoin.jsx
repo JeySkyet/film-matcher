@@ -8,33 +8,35 @@ export default function RoomJoin({ onJoin }) {
     const submit = () => canJoin && onJoin(userId.trim(), roomId.trim());
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-            <div className="bg-white rounded-3xl shadow-xl w-full max-w-xs p-8">
-                <div className="text-center mb-8">
-                    <span className="text-5xl">🎬</span>
-                    <h1 className="text-2xl font-bold text-gray-800 mt-3">Film Matcher</h1>
-                    <p className="text-sm text-gray-400 mt-1">Найдите фильм вместе</p>
+        <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6">
+            <div className="w-full max-w-sm animate-slide-up">
+                <div className="text-center mb-10">
+                    <div className="text-6xl mb-5">🎬</div>
+                    <h1 className="text-3xl font-black text-white tracking-tight">Film Matcher</h1>
+                    <p className="text-zinc-500 mt-2 text-sm">Найдите фильм вместе</p>
                 </div>
 
-                <div className="flex flex-col gap-3">
+                <div className="space-y-3">
                     <input
-                        className="border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-400 transition-colors"
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4 text-white placeholder-zinc-600 text-sm outline-none focus:border-zinc-600 transition-colors"
                         placeholder="Ваше имя"
                         value={userId}
+                        autoComplete="off"
                         onChange={e => setUserId(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && submit()}
                     />
                     <input
-                        className="border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-400 transition-colors"
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4 text-white placeholder-zinc-600 text-sm outline-none focus:border-zinc-600 transition-colors"
                         placeholder="Код комнаты"
                         value={roomId}
+                        autoComplete="off"
                         onChange={e => setRoomId(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && submit()}
                     />
                     <button
                         disabled={!canJoin}
                         onClick={submit}
-                        className="bg-blue-500 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold py-3 rounded-xl transition-colors hover:bg-blue-600 mt-2"
+                        className="w-full bg-white text-zinc-950 font-bold py-4 rounded-2xl transition-all hover:bg-zinc-100 active:scale-[0.97] disabled:opacity-20 disabled:cursor-not-allowed mt-1 text-sm"
                     >
                         Войти в комнату
                     </button>

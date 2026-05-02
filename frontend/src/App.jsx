@@ -33,10 +33,21 @@ export default function App() {
 
     if (stage === 'waiting') {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 gap-5">
+            <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-6 animate-fade-in">
                 <span className="text-6xl">🎬</span>
-                <p className="text-xl font-semibold text-gray-600">Ждём второго участника…</p>
-                <div className="w-10 h-10 rounded-full border-4 border-blue-400 border-t-transparent animate-spin" />
+                <div className="text-center">
+                    <p className="text-white font-semibold text-lg">Ждём второго участника</p>
+                    <p className="text-zinc-500 text-sm mt-1">Поделись кодом комнаты</p>
+                </div>
+                <div className="flex gap-1.5 mt-2">
+                    {[0, 1, 2].map(i => (
+                        <div
+                            key={i}
+                            className="w-2 h-2 rounded-full bg-zinc-600 animate-pulse"
+                            style={{ animationDelay: `${i * 0.2}s` }}
+                        />
+                    ))}
+                </div>
             </div>
         );
     }
