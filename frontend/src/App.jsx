@@ -10,10 +10,12 @@ export default function App() {
     const [films, setFilms] = useState([]);
     const [matches, setMatches] = useState([]);
     const [pendingMatch, setPendingMatch] = useState(null);
+    const [roomId, setRoomId] = useState('');
 
-    const handleJoin = (userId, roomId) => {
+    const handleJoin = (userId, room) => {
+        setRoomId(room);
         setStage('waiting');
-        connect(userId, roomId, (msg) => {
+        connect(userId, room, (msg) => {
             if (msg.action === 'joined') {
                 setFilms(msg.films);
                 if (msg.usersCount >= 2) setStage('swipe');
@@ -22,6 +24,7 @@ export default function App() {
                     prev.find(f => f.id === msg.film.id) ? prev : [...prev, msg.film]
                 );
                 setPendingMatch(msg.film);
+                setStage('match');
             } else if (msg.action === 'game_over') {
                 setMatches(msg.matches);
                 setStage('game_over');
@@ -54,12 +57,14 @@ export default function App() {
 
     if (stage === 'game_over') return <GameOver matches={matches} />;
 
-    return (
-        <div className="relative min-h-screen">
-            <FilmSwiper films={films} onDone={sendDone} />
-            {pendingMatch && (
-                <MatchOverlay film={pendingMatch} onContinue={() => setPendingMatch(null)} />
-            )}
-        </div>
-    );
+    if (stage === 'match') {
+        return (
+            <MatchOverlay
+                film={pendingMatch}
+                onContinue={() => { setPendingMatch(null); setStage('swipe'); }}
+            />
+        );
+    }
+
+    return <FilmSwiper films={films} onDone={sendDone} roomId={roomId} />;
 }

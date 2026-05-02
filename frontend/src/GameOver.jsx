@@ -44,6 +44,7 @@ export default function GameOver({ matches }) {
                                     src={film.poster}
                                     alt={film.title}
                                     className="w-full h-full object-cover"
+                                    referrerPolicy="no-referrer"
                                 />
                             </div>
                             <p className="text-white font-semibold text-sm leading-snug flex-1">{film.title}</p>

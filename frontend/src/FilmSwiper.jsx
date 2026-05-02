@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useSwipeable } from 'react-swipeable';
 import { sendSwipe } from './ws';
 
-export default function FilmSwiper({ films, onDone }) {
+export default function FilmSwiper({ films, onDone, roomId }) {
     const [index, setIndex] = useState(0);
     const [dragX, setDragX] = useState(0);
     const [flyDir, setFlyDir] = useState(null);
@@ -92,9 +92,16 @@ export default function FilmSwiper({ films, onDone }) {
             </div>
 
             <div className="flex flex-col items-center justify-between flex-1 w-full px-4 py-6 gap-6">
-                {/* Counter */}
-                <div className="text-zinc-600 text-xs font-medium tracking-wide">
-                    {index + 1} / {films.length}
+                {/* Counter + Room */}
+                <div className="flex items-center justify-between w-full max-w-xs">
+                    <div className="text-zinc-600 text-xs font-medium">
+                        {index + 1} / {films.length}
+                    </div>
+                    {roomId && (
+                        <div className="text-zinc-600 text-xs font-medium">
+                            Комната: <span className="text-zinc-400 font-semibold">{roomId}</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Card */}
@@ -108,6 +115,7 @@ export default function FilmSwiper({ films, onDone }) {
                         alt={film.title}
                         className="w-full h-full object-cover"
                         draggable={false}
+                        referrerPolicy="no-referrer"
                     />
 
                     {/* ХОЧУ stamp */}
