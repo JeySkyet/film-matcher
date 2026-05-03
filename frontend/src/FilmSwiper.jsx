@@ -13,6 +13,14 @@ export default function FilmSwiper({ films, onDone, roomId }) {
     const isEnd = films.length > 0 && index >= films.length;
     const film = films[index];
 
+    // Preload next 3 posters
+    useEffect(() => {
+        [1, 2, 3].forEach(offset => {
+            const next = films[index + offset];
+            if (next?.poster) new Image().src = next.poster;
+        });
+    }, [index, films]);
+
     useEffect(() => {
         if (isEnd && !doneSentRef.current) {
             doneSentRef.current = true;
@@ -110,21 +118,23 @@ export default function FilmSwiper({ films, onDone, roomId }) {
                     style={{ ...cardStyle, width: 'min(85vw, 340px)', aspectRatio: '2/3' }}
                     className="relative rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing flex-shrink-0"
                 >
-                    <img
-                        src={film.poster}
-                        alt={film.title}
-                        className="w-full h-full object-cover"
-                        draggable={false}
-                        referrerPolicy="no-referrer"
-                    />
+                    {film.poster ? (
+                        <img
+                            src={film.poster}
+                            alt={film.title}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                            draggable={false}
+                        />
+                    ) : (
+                        <div style={{ width: '100%', height: '100%', background: '#27272a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <span style={{ fontSize: '48px' }}>🎬</span>
+                        </div>
+                    )}
 
                     {/* ХОЧУ stamp */}
                     {dragX > 20 && (
-                        <div
-                            style={{ opacity: labelOpacity }}
-                            className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center pointer-events-none"
-                        >
-                            <span className="text-emerald-400 text-4xl font-black border-4 border-emerald-400 px-4 py-1.5 rounded-xl -rotate-12 tracking-widest">
+                        <div style={{ opacity: labelOpacity, position: 'absolute', inset: 0, background: 'rgba(16,185,129,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                            <span style={{ color: '#34d399', fontSize: '2.5rem', fontWeight: 900, border: '4px solid #34d399', padding: '6px 16px', borderRadius: '12px', transform: 'rotate(-12deg)', letterSpacing: '0.15em' }}>
                                 ХОЧУ
                             </span>
                         </div>
@@ -132,19 +142,16 @@ export default function FilmSwiper({ films, onDone, roomId }) {
 
                     {/* НЕТ stamp */}
                     {dragX < -20 && (
-                        <div
-                            style={{ opacity: labelOpacity }}
-                            className="absolute inset-0 bg-red-500/20 flex items-center justify-center pointer-events-none"
-                        >
-                            <span className="text-red-400 text-4xl font-black border-4 border-red-400 px-4 py-1.5 rounded-xl rotate-12 tracking-widest">
+                        <div style={{ opacity: labelOpacity, position: 'absolute', inset: 0, background: 'rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                            <span style={{ color: '#f87171', fontSize: '2.5rem', fontWeight: 900, border: '4px solid #f87171', padding: '6px 16px', borderRadius: '12px', transform: 'rotate(12deg)', letterSpacing: '0.15em' }}>
                                 НЕТ
                             </span>
                         </div>
                     )}
 
                     {/* Title gradient */}
-                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black via-black/50 to-transparent pt-16 pb-5 px-5 pointer-events-none">
-                        <p className="text-white font-bold text-base leading-snug">{film.title}</p>
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, #000 0%, rgba(0,0,0,0.5) 50%, transparent 100%)', padding: '64px 20px 20px', pointerEvents: 'none' }}>
+                        <p style={{ color: '#fff', fontWeight: 700, fontSize: '15px', lineHeight: 1.3, margin: 0 }}>{film.title}</p>
                     </div>
                 </div>
 

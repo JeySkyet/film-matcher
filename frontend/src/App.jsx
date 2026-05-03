@@ -17,7 +17,8 @@ export default function App() {
         setStage('waiting');
         connect(userId, room, (msg) => {
             if (msg.action === 'joined') {
-                setFilms(msg.films);
+                const shuffled = [...msg.films].sort(() => Math.random() - 0.5);
+                setFilms(shuffled);
                 if (msg.usersCount >= 2) setStage('swipe');
             } else if (msg.action === 'match') {
                 setMatches(prev =>

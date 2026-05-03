@@ -5,8 +5,11 @@
 frontend/node_modules/
 frontend/dist/
 
-# Puppeteer временные данные
+# Генерируемые данные
 watchlist.csv
+watchlist.json
+watchlist_raw.json
+posters/
 
 # Logs
 npm-debug.log*

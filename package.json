@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "update-watchlist": "node watchlist.js && scp watchlist.csv root@157.22.198.66:/var/www/jellinholl/film-matcher/watchlist.csv && ssh root@157.22.198.66 'pm2 restart film-matcher'"
+    "sync": "node sync.js && rsync -avz posters/ root@157.22.198.66:/var/www/jellinholl/film-matcher/posters/ && scp watchlist.json root@157.22.198.66:/var/www/jellinholl/film-matcher/watchlist.json"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "adm-zip": "^0.5.17",
     "csv-parse": "^5.6.0",
     "dotenv": "^16.5.0",
     "puppeteer": "^24.10.0",

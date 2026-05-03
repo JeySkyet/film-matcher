@@ -1,7 +1,6 @@
 const http = require('http');
 const path = require('path');
 const WebSocket = require('ws');
-const { parse } = require('csv-parse/sync');
 const fs = require('fs');
 const { getOrCreateRoom, registerUser, recordSwipe, markDone, removeUser, getRoom } = require('./rooms');
 
@@ -10,16 +9,9 @@ const server = http.createServer();
 const wss = new WebSocket.Server({ server });
 
 function loadFilms() {
-    const csv = fs.readFileSync(path.join(__dirname, '../watchlist.csv'), 'utf8');
-    return parse(csv, { columns: true, skip_empty_lines: true }).map((r, i) => ({
-        id: `f${i}`,
-        title: r.Title,
-        poster: r.Image,
-    }));
+    const raw = fs.readFileSync(path.join(__dirname, '../watchlist.json'), 'utf8');
+    return JSON.parse(raw);
 }
-
-const ALL_FILMS = loadFilms();
-console.log(`Loaded ${ALL_FILMS.length} films from watchlist.csv`);
 
 function shuffle(arr) {
     const a = [...arr];
@@ -56,7 +48,7 @@ wss.on('connection', (ws) => {
 
             if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = null; }
 
-            const room = getOrCreateRoom(roomId, shuffle(ALL_FILMS));
+            const room = getOrCreateRoom(roomId, shuffle(loadFilms()));
             const type = registerUser(roomId, userId, ws);
             const usersCount = Object.keys(room.users).length;
 
