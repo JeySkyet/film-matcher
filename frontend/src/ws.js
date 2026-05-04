@@ -13,7 +13,7 @@ function _open() {
     if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
 
     const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    socket = new WebSocket(`${proto}://${window.location.hostname}:3010`);
+    socket = new WebSocket(`${proto}://${window.location.host}/ws`);
 
     socket.onopen = () => {
         socket.send(JSON.stringify({ action: 'join', ...params }));
