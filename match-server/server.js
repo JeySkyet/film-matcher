@@ -69,6 +69,9 @@ wss.on('connection', (ws) => {
                 send(ws, { action: 'swipe_ack', filmId: data.filmId });
             }
 
+        } else if (data.action === 'ping') {
+            send(ws, { action: 'pong' });
+
         } else if (data.action === 'done') {
             if (!roomId || !userId) return;
             const matches = markDone(roomId, userId);
