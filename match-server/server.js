@@ -52,10 +52,14 @@ wss.on('connection', (ws) => {
             const type = registerUser(roomId, userId, ws);
             const usersCount = Object.keys(room.users).length;
 
-            const msg = { action: 'joined', films: room.films, usersCount };
-            // On reconnect only the rejoining client gets the update
-            if (type === 'reconnect') send(ws, msg);
-            else broadcast(roomId, msg);
+            // Joining/reconnecting user always gets full message with films
+            send(ws, { action: 'joined', films: room.films, usersCount });
+            // Existing users get lightweight notification (no films — they already have them)
+            if (type === 'new') {
+                for (const [uid, user] of Object.entries(room.users)) {
+                    if (uid !== userId) send(user.ws, { action: 'joined', usersCount });
+                }
+            }
 
             console.log(`[${type}] ${userId} → room ${roomId} (${usersCount} users)`);
 
