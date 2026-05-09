@@ -19,13 +19,13 @@ function _open() {
     const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
     socket = new WebSocket(`${proto}://${window.location.host}/ws`);
 
-    // Safari sometimes hangs in CONNECTING state — force retry after 5s
+    // Safari sometimes hangs in CONNECTING state — force retry after 3s
     connectTimer = setTimeout(() => {
         if (socket?.readyState === WebSocket.CONNECTING) {
             onMessage?.({ action: '_ws', text: 'connect timeout, retrying...' });
             socket.close();
         }
-    }, 5000);
+    }, 3000);
 
     socket.onopen = () => {
         if (connectTimer) { clearTimeout(connectTimer); connectTimer = null; }
@@ -47,7 +47,7 @@ function _open() {
         if (connectTimer) { clearTimeout(connectTimer); connectTimer = null; }
         if (pingTimer) { clearInterval(pingTimer); pingTimer = null; }
         onMessage?.({ action: '_ws', text: `closed code=${e.code}, reconnecting...` });
-        reconnectTimer = setTimeout(_open, 3000);
+        reconnectTimer = setTimeout(_open, 1000);
     };
 
     socket.onerror = () => {
