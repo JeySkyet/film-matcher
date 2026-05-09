@@ -22,8 +22,17 @@ function _open() {
 
     const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
     socket = new WebSocket(`${proto}://${window.location.host}/ws`);
+    onMessage?.({ action: '_ws', text: `socket created, state=${socket.readyState}` });
+
+    // Poll readyState every 2s to detect if stuck in CONNECTING
+    const pollTimer = setInterval(() => {
+        if (!socket) { clearInterval(pollTimer); return; }
+        onMessage?.({ action: '_ws', text: `poll state=${socket.readyState}` });
+        if (socket.readyState !== WebSocket.CONNECTING) clearInterval(pollTimer);
+    }, 2000);
 
     socket.onopen = () => {
+        clearInterval(pollTimer);
         onMessage?.({ action: '_ws', text: 'connected, sending join' });
         socket.send(JSON.stringify({ action: 'join', ...params }));
 
@@ -39,13 +48,15 @@ function _open() {
     };
 
     socket.onclose = (e) => {
+        clearInterval(pollTimer);
         if (pingTimer) { clearInterval(pingTimer); pingTimer = null; }
         onMessage?.({ action: '_ws', text: `closed code=${e.code}, reconnecting...` });
         reconnectTimer = setTimeout(_open, 3000);
     };
 
-    socket.onerror = () => {
-        onMessage?.({ action: '_ws', text: 'error' });
+    socket.onerror = (e) => {
+        clearInterval(pollTimer);
+        onMessage?.({ action: '_ws', text: `error type=${e.type}` });
     };
 }
 
