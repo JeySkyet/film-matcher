@@ -7,7 +7,9 @@ let pingTimer = null;
 export function connect(userId, roomId, handler) {
     params = { userId, roomId };
     onMessage = handler;
-    _open();
+    // Defer to next event loop tick — Safari 26.4 bug: WebSocket created
+    // synchronously inside a click handler never initiates the TCP connection
+    setTimeout(_open, 0);
 }
 
 function _open() {
